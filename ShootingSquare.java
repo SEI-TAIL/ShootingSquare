@@ -24,6 +24,8 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 	private List<Enemy> enemyList = new ArrayList<Enemy>();
 	private int enemySize = 5;
 	private int Time = 0;
+	private int score = 0;
+	private boolean isGameOver = false;
 	
 	ShootingSquare() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -43,20 +45,36 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 
 	@Override
 	public void run() {
-		while (!this.isEndGame()) {
+		while (!isGameOver) {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 				break;
 			}
-			this.moveMe();
-			this.moveBullet();
-			this.shotMyBullet();
-			this.Time++;
-			this.repaint();
+			moveMe();
+			moveBullet();
+			shotMyBullet();
+			if (this.makeEnemy(Time, enemySize)) {
+				enemySize++;
+			}
+			moveEnemy();
+			score++;
+			Time++;
+			collision();
+			repaint();
+			ExitGame();
 		}
-		System.exit(0);
+		
+		while (true) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				break;
+			}
+			ExitGame();
+		}
 	}
 
 	public void shotMyBullet() {
@@ -83,44 +101,82 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 		}
 	}
 
-	/* TODO enemy moving and fadeout
 	public void moveEnemy() {
 		Enemy bufEnemy;
-		for (Iterator<Enemy> ite = enemyList.iterator();
-			 ite.hasNext() == true;) {
+		for (Iterator<Enemy> ite = enemyList.iterator(); ite.hasNext() == true;) {
 			bufEnemy = ite.next();
 			bufEnemy.moveEnemy();
 			if (bufEnemy.delCheckBullet() == true) {
+				bufEnemy = null;
 				ite.remove();
 			}
 		}
 	}
-	*/
 	
 	public void moveBullet() {
 		Bullet bufBullet;
-		for (Iterator<Bullet> ite = bulletList.iterator();
-			 ite.hasNext() == true;) {
+		for (Iterator<Bullet> ite = bulletList.iterator(); ite.hasNext() == true;) {
 			bufBullet = ite.next();
 			bufBullet.moveBullet();
 			if (bufBullet.delCheckBullet() == true) {
+				bufBullet = null;
 				ite.remove();
 			}
 		}
 	}
 	
-	public void makeEnemy(int Time, int enemySize) {
+	public boolean makeEnemy(int Time, int enemySize) {
 		if (Time % 20 == 0) {
 			Random rnd = new Random();
+			System.out.println(rnd.nextInt(ShootingSquare.FRAME_SIZE));
 			Enemy bufEn = new Enemy(rnd.nextInt(ShootingSquare.FRAME_SIZE),
-									rnd.nextInt(ShootingSquare.FRAME_SIZE),
-									enemySize);
+					0,
+					enemySize);
 			enemyList.add(bufEn);
+			return true;
 		}
+		return false;
 	}
 	
-	public boolean isEndGame() {
-		return keyInput.isEsc();
+	public void collision() {
+		for (Iterator<Enemy> iteEnemy = enemyList.iterator(); iteEnemy.hasNext();) {
+			Enemy bufEnemy = iteEnemy.next();
+			Point bufEnemyPos = bufEnemy.getPos();
+			for (Iterator<Bullet> iteBullet = bulletList.iterator(); iteBullet.hasNext();) {
+				Bullet bufBullet = iteBullet.next();
+				Point bufBulletPos = bufBullet.getPos();
+				if (hitEnemyBullet(bufEnemy, bufEnemyPos, bufBulletPos)) {
+					score++;
+					bufBullet = null;
+					bufEnemy.minimizeSize();
+					iteBullet.remove();
+				}
+			}
+			
+			Point bufMyPos = me.getPos();
+			if (hitEnemyMe(bufEnemy, bufEnemyPos, bufMyPos)) {
+				isGameOver = true;
+				System.out.println("Hit me");
+			}
+		}
+	}
+
+	private boolean hitEnemyMe(Enemy bufEnemy, Point bufEnemyPos, Point bufMyPos) {
+		return bufMyPos.x + MySquare.SIZE >= bufEnemyPos.x &&
+				bufMyPos.x <= bufEnemyPos.x + bufEnemy.getSize() &&
+				bufMyPos.y + MySquare.SIZE >= bufEnemyPos.y &&
+				bufMyPos.y <= bufEnemyPos.y + bufEnemy.getSize();
+	}
+
+	private boolean hitEnemyBullet(Enemy bufEnemy, Point bufEnemyPos,
+			Point bufBulletPos) {
+		return hitEnemyMe(bufEnemy, bufEnemyPos, bufBulletPos);
+	}
+
+	public void ExitGame() {
+		if (keyInput.isEsc() == true) {
+			System.exit(0);
+		}
 	}
 
 	@Override
@@ -143,16 +199,25 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 		
 		public void paintComponent(Graphics g) {
 			Point bufMyPos = me.getPos();
+			g.setColor(Color.RED);
+			g.drawRect(bufMyPos.x, bufMyPos.y, MySquare.SIZE, MySquare.SIZE);
 			g.setColor(Color.BLACK);
-			g.drawOval(bufMyPos.x, bufMyPos.y, MySquare.SIZE, MySquare.SIZE);
-			for (Iterator<Bullet> ite = bulletList.iterator();
-				 ite.hasNext();) {
+			g.drawString(Integer.toString(score), 10, 10);
+			for (Iterator<Bullet> ite = bulletList.iterator(); ite.hasNext();) {
 				Bullet bufBul = ite.next();
 				Point bufPos = bufBul.getPos();
 				g.drawRect(bufPos.x, bufPos.y, Bullet.SIZE, Bullet.SIZE);
 			}
+			g.setColor(Color.BLUE);
+			for (Iterator<Enemy> ite = enemyList.iterator(); ite.hasNext();) {
+				Enemy bufEnemy = ite.next();
+				Point bufPos = bufEnemy.getPos();
+				g.drawRect(bufPos.x, bufPos.y, bufEnemy.getSize(), bufEnemy.getSize());				
+			}
+			g.setColor(Color.BLACK);
+			if (isGameOver == true) {
+				g.drawString("Game Over.", ShootingSquare.FRAME_SIZE/2, ShootingSquare.FRAME_SIZE/2);
+			}
 		}
 	}
-
-	
 }

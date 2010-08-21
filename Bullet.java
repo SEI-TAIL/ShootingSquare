@@ -4,7 +4,7 @@
 public class Bullet {
 	public final static int SIZE = 1;
 	public final static int SPEED = 8;
-	private int n;
+	public int n;
 	private Point pos = new Point();
 
 	Bullet(int x, int y, int n) {
@@ -19,7 +19,6 @@ public class Bullet {
 	
 	public void moveBullet() {
 		this.pos.y -= SPEED;
-		System.out.println("bulletNo : " + n);
 	}
 	
 	public boolean delCheckBullet() {
