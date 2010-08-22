@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.List;
 import java.awt.Point;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
@@ -25,6 +26,7 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 	private int enemySize = 5;
 	private int Time = 0;
 	private int score = 0;
+	private int highScore = 0;
 	private boolean isGameOver = false;
 	
 	ShootingSquare() {
@@ -45,6 +47,7 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 
 	@Override
 	public void run() {
+		readHighScore();
 		while (!isGameOver) {
 			try {
 				Thread.sleep(50);
@@ -65,6 +68,8 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 			repaint();
 			ExitGame();
 		}
+		
+		writeHighScore();
 		
 		while (true) {
 			try {
@@ -131,7 +136,8 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 			System.out.println(rnd.nextInt(ShootingSquare.FRAME_SIZE));
 			Enemy bufEn = new Enemy(rnd.nextInt(ShootingSquare.FRAME_SIZE),
 					0,
-					enemySize);
+					enemySize,
+					0);
 			enemyList.add(bufEn);
 			return true;
 		}
@@ -172,6 +178,39 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 			Point bufBulletPos) {
 		return hitEnemyMe(bufEnemy, bufEnemyPos, bufBulletPos);
 	}
+	
+	private void readHighScore() {
+        try{
+            FileReader fr = new FileReader("ShootingSquare.txt");
+            BufferedReader br = new BufferedReader(fr);
+        
+            String tmp_str = br.readLine();
+            System.out.println(tmp_str);
+            highScore = Integer.parseInt(tmp_str);
+            br.close();
+        } catch (IOException e) {
+        	e.printStackTrace();
+        } catch (NumberFormatException e) {
+        	e.printStackTrace();
+        }
+	}
+	private void writeHighScore() {
+		if (score > highScore) {
+			System.out.println(score + " " + highScore);
+			try {
+				/*
+		      DataOutputStream out = new DataOutputStream(new FileOutputStream("ShootingSquare.txt"));
+		      out.writeInt(score);
+		      out.close();
+		      */
+		        FileWriter fileWr = new FileWriter("ShootingSquare.txt");
+		        fileWr.write(Integer.toString(score));
+		        fileWr.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	public void ExitGame() {
 		if (keyInput.isEsc() == true) {
@@ -203,6 +242,7 @@ public class ShootingSquare extends JFrame implements Runnable, KeyListener {
 			g.drawRect(bufMyPos.x, bufMyPos.y, MySquare.SIZE, MySquare.SIZE);
 			g.setColor(Color.BLACK);
 			g.drawString(Integer.toString(score), 10, 10);
+			g.drawString(Integer.toString(highScore), 350, 10);
 			for (Iterator<Bullet> ite = bulletList.iterator(); ite.hasNext();) {
 				Bullet bufBul = ite.next();
 				Point bufPos = bufBul.getPos();

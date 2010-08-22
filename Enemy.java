@@ -6,12 +6,14 @@ public class Enemy {
 	
 	static int mkSize = 1;
 	private Point pos = new Point();
+	private int kind;
 	private int size;
 	
-	Enemy(int x, int y, int size) {
+	Enemy(int x, int y, int size, int kind) {
 		this.pos.x = x;
 		this.pos.y = y;
 		this.size = size;
+		this.kind = kind;
 	}
 	
 	public void minimizeSize() {
@@ -41,5 +43,8 @@ public class Enemy {
 	}
 	public int getSize() {
 		return this.size;
+	}
+	public int getKind() {
+		return this.kind;
 	}
 }
